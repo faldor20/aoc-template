@@ -20,6 +20,9 @@ main! = \{} ->
         part1: part1f,
         part2: part2f,
     }
+# ========================
+#    Helper functions
+# ========================
 
 unzip = \list ->
     list
@@ -31,6 +34,10 @@ unzip = \list ->
                 bList |> List.append (b),
             )
         )
+
+# ========================
+#    Input parsing
+# ========================
 
 parseLine : _ -> Result _ _
 parseLine = \x ->
@@ -44,6 +51,10 @@ parseInput = \input ->
     |> Str.splitOn "\n"
     |> List.keepOks parseLine
     |> unzip
+
+# ========================
+#    Solutions
+# ========================
 
 part1f : Str -> Result Str Str
 part1f = \input ->
@@ -60,11 +71,12 @@ part1f = \input ->
 part2f : Str -> Result Str Str
 part2f = \input ->
     (fst, snd) = parseInput input
-    startDict = fst |> List.map (\a -> (a, 0)) |> Dict.fromList
     endDict =
-        snd |> List.walk startDict \dict, id ->
+        snd |> List.walk (Dict.empty{}) \dict, id ->
          dict |> Dict.update id \maybeVal -> 
-             Result.map maybeVal \count -> count + 1
+             when maybeVal is 
+             Err _-> Ok 1
+             Ok count->Ok (count + 1)
     sum =
         fst |> List.walk 0 \state, id ->
             count = (endDict |> Dict.get id |> Result.withDefault 0)
