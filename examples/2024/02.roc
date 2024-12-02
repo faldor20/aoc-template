@@ -94,33 +94,71 @@ checkSafe = \last, curr, wasDecreasing ->
     changedDirection = wasDecreasing != None && (decreasing != wasDecreasing)
 
     (diff > 3 || diff < 1 || changedDirection, decreasing)
+
+# Checks if a sequence of levels is valid or not in a fairly efficent manner
+# Will walk forward checking for safe levels untill it finds an unsfae level which will cause an error
+# In the case of an error we will try to continue skipping the current level
+# Becasue this is recursive if an error occurs and recovery doesn't work it will bubble up to the previous iteration and we will try to recover from there
+# eg: 1 2 3 2 4
+# (1 2 4 3) 4 6 -we process these levels and then hit an error (3)
+# (1 2 4 4) 6 -we skip the current value (3) but we then have another error value (4)
+# (1 2 3 4 6) -we move back one iteration, skip the previous value  (4) and then continue to the end
+# In the worst case we would walk all the way back to the start. Although we could cap it at 3 steps back, which is the most we would need to find a solution if one exists
 solver = \lines, unsafeThreshold ->
-    lines
-    |> List.keepOks \lineInp ->
-        state = { last: -1, decreasing: None, hadUnsafe: 0 }
-        helper = \items, st ->
-            res =
-                when items is
-                    [] -> Ok {}
-                    [num, .. as rest] ->
-                        if st.last == -1 then
-                            helper rest { st & last: num, decreasing: None }
+    state = { last: -1, decreasing: None, hadUnsafe: 0 }
+    solveLine = \items, st ->
+        { last, decreasing: wasDecreasing, hadUnsafe } = st
+        attempt =
+            when items is
+                [] -> Ok {}
+                [num, .. as rest] ->
+                    # Handle first level
+                    if last == -1 then
+                        solveLine rest { st & last: num, decreasing: None }
+                    else
+                        (notSafe, decreasing) = checkSafe last num wasDecreasing
+                        if notSafe then
+                            Err Unsafe
                         else
-                            { last, decreasing: wasDecreasing, hadUnsafe } = st
-                            (notSafe, decreasing) = checkSafe last num wasDecreasing
-                            if notSafe then
-                                Err Unsafe
-                            else
-                                helper rest { last: num, decreasing, hadUnsafe }
-            res
-            |> Result.onErr \_ ->
-                # If we have already tried to recover from an unsafe issue don't try again
-                if st.hadUnsafe + 1 > unsafeThreshold then
-                    Err Unsafe
-                else
-                # If we have already tried to recover from an unsafe issue don't try again
-                    helper (items |> List.dropFirst 1) { st & hadUnsafe: st.hadUnsafe + 1 }
-        helper lineInp state
+                            solveLine rest { last: num, decreasing, hadUnsafe }
+        attempt
+        |> Result.onErr \_ ->
+            # If we have already tried to recover from an unsafe issue don't try again
+            if hadUnsafe + 1 > unsafeThreshold then
+                Err Unsafe
+            else
+                # We will try to recover from the unsafe state by skipping the current level and then walking forward again.
+                solveLine (items |> List.dropFirst 1) { st & hadUnsafe: hadUnsafe + 1 }
+
+    lines
+    |> List.keepOks \lineInp -> solveLine lineInp state
+slidingPairs : List a, (a, a -> b) -> List b
+slidingPairs = \list, fn ->
+    loop = \lst, res ->
+        when lst is
+            [a, b, ..] ->
+                loop
+                    (lst |> List.dropFirst 1)
+                    (res |> List.append (fn a b))
+            [_] -> res
+            [] -> res
+    loop list (List.withCapacity (List.len list - 1))
+
+resultFromBool = \a -> if a then Ok {} else Err WasFalse
+
+solverSimple = \lines ->
+
+    solveLevel = \levels ->
+        diffs = levels |> slidingPairs \a, b ->  b-a
+        direction = if diffs |> List.first |> Result.withDefault 0 |> Num.isPositive then Num.isPositive else Num.isNegative
+        diffs |> List.all (\a -> direction(a) && Num.abs(a) <= 3 && a != 0)
+
+    permutations = \line ->
+        List.range { start: At 0, end: Before (List.len line) }
+        |> List.map \idx -> line |> List.dropAt idx
+
+    lines
+    |> List.countIf\a -> a |> permutations |> List.any solveLevel
 
 part1f : Str -> Result Str Str
 part1f = \input ->
@@ -134,7 +172,11 @@ part2f : Str -> Result Str Str
 part2f = \input ->
     lines = parseInput input
 
-    safeList = lines |> solver 1
+    safeList = lines |> solver 1|>List.len
+    safeListCheck = lines |> solverSimple
 
-    safeList |> List.len |> Num.toStr |> Ok
+    expect safeList==safeListCheck
+    
+
+    safeList |> Num.toStr |> Ok
 
