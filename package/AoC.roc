@@ -83,15 +83,15 @@ solve! = \{ year, day, title, part1, part2 } ->
                             ""
                     )
 
-    readMillis = if (endRead - startRead) < 1 then "<1" else Num.toStr (endRead - startRead)
-    part1Millis = if (endPart1 - startPart1) < 1 then "<1" else Num.toStr (endPart1 - startPart1)
-    part2Millis = if (endPart2 - startPart2) < 1 then "<1" else Num.toStr (endPart2 - startPart2)
+    readMillis = if (endRead - startRead) < 1 then "<1" else Num.toStr ((endRead - startRead)|>Num.toFrac|>Num.div 1000000)
+    part1Millis = if (endPart1 - startPart1) < 1 then "<1" else Num.toStr ((endPart1 - startPart1)|>Num.toFrac|>Num.div 1000000)
+    part2Millis = if (endPart2 - startPart2) < 1 then "<1" else Num.toStr ((endPart2 - startPart2)|>Num.toFrac|>Num.div 1000000)
     try
         stdout!
         (
             Str.joinWith
                 [
-                    "reding took: $(readMillis)ms",
+                    "reading took: $(readMillis)ms",
                     "part1 took: $(part1Millis)ms",
                     "part2 took: $(part2Millis)ms",
                 ]
