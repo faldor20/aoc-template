@@ -1,5 +1,5 @@
 app [main!] {
-    pf: platform "../../../basic-cli/platform/main.roc",
+    pf: platform"../../../basic-cli/platform/main.roc",
     aoc: "../../package/main.roc",
 }
 
@@ -12,6 +12,8 @@ import aoc.AoC {
     time!: \{} -> Utc.now! {} |> Utc.toMillisSinceEpoch,
 }
 
+
+
 main! = \{} ->
     AoC.solve! {
         year: 2020,
@@ -20,6 +22,19 @@ main! = \{} ->
         part1: part1f,
         part2: part2f,
     }
+
+tagTest= \list -> 
+    list|>List.walkUntil 0 \state, item->
+        if item >10 then
+         Continue (item-1)
+        else
+            Break 0
+
+Bbbtest:[Bottt Str]
+
+aast:Bbbtest-> _
+aast= \a->
+    {}  
 # ========================
 #    Helper functions
 # ========================
@@ -28,12 +43,12 @@ unzip = \list ->
     list
     |> List.walk
         ([], [])
-        (\(aList, bList), (a, b) ->
+        \(aList, bList), (a, b) ->
             (
                 aList |> List.append (a),
                 bList |> List.append (b),
             )
-        )
+        
 
 # ========================
 #    Input parsing

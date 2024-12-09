@@ -117,6 +117,8 @@ digits3max =
             Err "too many digits"
     |> Parser.flatten
 
+
+
 parseCmd =
     Parser.oneOf [
         const (\n1 -> \n2 -> Mul n1 n2)

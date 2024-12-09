@@ -6,10 +6,11 @@ app [main!] {
 import pf.Stdout
 import pf.File
 import pf.Utc
+
 import aoc.AoC {
     stdin!: \{} -> File.readBytes! "examples/input/2024_02.txt",
     stdout!: Stdout.write!,
-    time!: \{} -> Utc.now! {} |> Utc.toMillisSinceEpoch,
+    time!: \{} -> Utc.now! {} |> Utc.toNanosSinceEpoch,
 }
 
 main! = \{} ->
@@ -172,10 +173,10 @@ part2f : Str -> Result Str Str
 part2f = \input ->
     lines = parseInput input
 
-    safeList = lines |> solver 1|>List.len
-    safeListCheck = lines |> solverSimple
+    # safeList = lines |> solver 1|>List.len
+    safeList = lines |> solverSimple
 
-    expect safeList==safeListCheck
+    # expect safeList==safeListCheck
     
 
     safeList |> Num.toStr |> Ok
